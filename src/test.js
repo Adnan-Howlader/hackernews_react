@@ -1,7 +1,16 @@
-const numbers=[1,2,3,4,5,6,7,8,9,10];
+const user={
+    id:'1',
+    firstName:'Robin',
+    lastName:'Wieruch',
+    country:'Germany',
+    city:'Berlin',
 
-const newNumbers=numbers.map((number)=>{
-    return number*2;
-});
+}
 
-console.log(newNumbers);
+
+const {id,country,city,...userWithoutAddress}=user;//deconstructing the object
+
+console.log(userWithoutAddress);
+console.log(city);
+
+

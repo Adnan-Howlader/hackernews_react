@@ -2,7 +2,7 @@
 import './App.css';
 import React from 'react';
 
-const items = [
+let items = [
   {
     id: 1,
     name: "nes",
@@ -27,11 +27,31 @@ const items = [
 
 ];
 
+
+//reducer function
+const consoleReducer=(state,action)=>{
+  if(action.type==='SET_CONSOLE'){
+    return action.payload;// return the new state
+  }
+
+  else if(action.type==='REMOVE_CONSOLE'){
+    return state.filter((Console)=>Console.id!==action.payload.id);
+  }
+  else{
+    throw new Error();
+  }
+  
+};
+
+
+
 const getAsyncStories=(resolve,reject)=>{
   return new Promise((resolve,reject)=>{
     setTimeout(()=>{
-      resolve({data:{stories:items}});
-    },3000);//3 seconds delay and then resolve the promise
+     // resolve({data:{consoles:items}});//it sends resolved promise
+       reject(new Error('Error occured'));//it sends rejected promise
+
+    },3000);//0 seconds delay and then resolve the promise
   });
 
 
@@ -52,26 +72,41 @@ const useSemiPersistentState=(key,initialState)=>{
 
 
 
+
+
 const App=()=> {
 
   
+
+  
   const [searchTerm,setSearchTerm]=useSemiPersistentState('search','switch'); //array destructuring
-  const [Consoles,setConsoles]=React.useState([]);//array destructuring
+  // const [Consoles,setConsoles]=React.useState([]);//array destructuring
+  const [Consoles,dispatchConsoles]=React.useReducer(consoleReducer,[]);//array destructuring
+  const [isError,setIsError]=React.useState(false);//array destructuring
+  const [isLoading,setIsLoading]=React.useState(false);//array destructuring
+
+
   const handleSearch=(event)=>{
      setSearchTerm(event.target.value);
      console.log(searchTerm)
     
   }
+  
 
   React.useEffect(()=>{
-    getAsyncStories().then((result)=>setConsoles(result.data.stories));
-  },[]);//empty array means it runs only on first render
+    setIsLoading(true);
+    getAsyncStories().then((result)=>
+    dispatchConsoles({type:'SET_CONSOLE',payload:result.data.consoles}))
+    .catch(()=>setIsError(true));
   
+  },[]);//empty array means it runs only once on first render
+
   //create a list of objects that store id and name of nintendo console
 
   const handleRemoveItem=(item)=>{//filter out the item that matches the id
-    const newConsoles=Consoles.filter((Console)=>Console.id!==item.id);
-    setConsoles(newConsoles);
+    //const newConsoles=Consoles.filter((Console)=>Console.id!==item.id);
+    dispatchConsoles({type:'REMOVE_CONSOLE',payload:item});
+   
   }
 
  
@@ -89,7 +124,11 @@ const App=()=> {
      <InputWithLabel id="search"  onInputChange={handleSearch} value={searchTerm} type="text" isFocused>
          My Video Game store
       </InputWithLabel>
-     <List list={filteredItem} onRemoveItem={handleRemoveItem}  />
+
+      {isError && <p>Something went wrong...</p>}
+
+      {isLoading?<p>Loading...</p>:<List list={filteredItem} onRemoveItem={handleRemoveItem}  />}
+     
      
      
 

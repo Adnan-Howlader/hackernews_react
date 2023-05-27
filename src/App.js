@@ -38,7 +38,8 @@ const consoleReducer=(state,action)=>{
   }
 
   else if(action.type==='REMOVE_CONSOLE'){
-    const new_consoles=state.data.filter((Console)=>Console.id!==action.payload.id);
+    const new_consoles=state.data.filter((Console)=>Console.objectID
+    !==action.payload.objectID  );
     return {data:new_consoles,isError:false,isLoading:false};
   }
   else if(action.type==='SET_ERROR'){
@@ -55,8 +56,8 @@ const consoleReducer=(state,action)=>{
 const getAsyncStories=(resolve,reject)=>{
   return new Promise((resolve,reject)=>{
     setTimeout(()=>{
-      //resolve({consoles:items});//it sends resolved promise
-      reject(new Error('Error occured'));//it sends rejected promise
+      resolve({consoles:items});//it sends resolved promise 
+      //reject(new Error('Error occured'));//it sends rejected promise
 
     },3000);//0 seconds delay and then resolve the promise
   });
@@ -88,7 +89,7 @@ const App=()=> {
   
 
   
-  const [searchTerm,setSearchTerm]=useSemiPersistentState('search','switch'); //array destructuring
+  const [searchTerm,setSearchTerm]=useSemiPersistentState('search','ipad'); //array destructuring
   // const [Consoles,setConsoles]=React.useState([]);//array destructuring
   const [Consoles,dispatchConsoles]=React.useReducer(consoleReducer,{data:[],isError:false,isLoading:true});//array destructuring
 
@@ -106,10 +107,18 @@ const App=()=> {
     //loading
     dispatchConsoles({type:'SET_LOADING'});
 
-    getAsyncStories().then((result)=>
-    dispatchConsoles({type:'SET_CONSOLE',payload:result.consoles})).catch(error=>dispatchConsoles({type:'SET_ERROR'}));
-  
+    //getAsyncStories().then((result)=>
+    //dispatchConsoles({type:'SET_CONSOLE',payload:result.consoles})).catch(error=>dispatchConsoles({type:'SET_ERROR'}));
+    
+
+    fetch(`${API_ENDPOINT}${searchTerm}`)
+    .then(response=>response.json())
+    .then(result=>dispatchConsoles({type:'SET_CONSOLE',payload:result.hits})
+    ).catch(error=>dispatchConsoles({type:'SET_ERROR'}));
+   
   }  ,[]);//empty array means it runs only once on first render
+
+  
     
   
 //empty array means it runs only once on first render
@@ -126,7 +135,8 @@ const App=()=> {
 
 
   const filteredItem=Consoles.data.filter((Console)=>{
-    return Console.name.toLowerCase().includes(searchTerm.toLowerCase());
+     
+    return Console.title.toLowerCase().includes(searchTerm.toLowerCase());
   });
   
   
@@ -154,7 +164,7 @@ const App=()=> {
 
 
 const List=({list,onRemoveItem})=>{//destructuring props object
-  return list.map((item)=><Item key={item.id} item={item} onRemoveItem={onRemoveItem} />)};
+  return list.map((item)=><Item key={item.objectID} item={item} onRemoveItem={onRemoveItem} />)};
  
 
 
@@ -170,7 +180,7 @@ const Item=({item,onRemoveItem})=>{//destructuring props object
   return <div>
 
   <span>
-    {item.name}
+    {item.title}
 
   </span>
   <span><button type="button" onClick={()=>onRemoveItem(item)}>Dismiss</button></span>

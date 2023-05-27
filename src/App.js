@@ -30,10 +30,10 @@ let items = [
 
 //reducer function
 const consoleReducer=(state,action)=>{
-  if(action.type==='SET_LOADING'){
+  if(action.type==='FETCH_INIT'){
     return {...state,isLoading:true,isError:false};
   }
-  else if(action.type==='SET_CONSOLE'){
+  else if(action.type==='FETCH_SUCCESS'){
     return {data:action.payload,isError:false,isLoading:false};
   }
 
@@ -89,7 +89,7 @@ const App=()=> {
   
 
   
-  const [searchTerm,setSearchTerm]=useSemiPersistentState('search','ipad'); //array destructuring
+  const [searchTerm,setSearchTerm]=useSemiPersistentState('search',''); //array destructuring
   // const [Consoles,setConsoles]=React.useState([]);//array destructuring
   const [Consoles,dispatchConsoles]=React.useReducer(consoleReducer,{data:[],isError:false,isLoading:true});//array destructuring
 
@@ -105,18 +105,20 @@ const App=()=> {
   React.useEffect(()=>{
 
     //loading
-    dispatchConsoles({type:'SET_LOADING'});
+    dispatchConsoles({type:'FETCH_INIT'});
 
     //getAsyncStories().then((result)=>
     //dispatchConsoles({type:'SET_CONSOLE',payload:result.consoles})).catch(error=>dispatchConsoles({type:'SET_ERROR'}));
     
-
+   if (!searchTerm) return;
     fetch(`${API_ENDPOINT}${searchTerm}`)
     .then(response=>response.json())
-    .then(result=>dispatchConsoles({type:'SET_CONSOLE',payload:result.hits})
+    .then((result)=>{
+      
+      dispatchConsoles({type:'FETCH_SUCCESS',payload:result.hits})}
     ).catch(error=>dispatchConsoles({type:'SET_ERROR'}));
    
-  }  ,[]);//empty array means it runs only once on first render
+  }  ,[searchTerm]);//empty array means it runs only once on first render
 
   
     
@@ -135,8 +137,14 @@ const App=()=> {
 
 
   const filteredItem=Consoles.data.filter((Console)=>{
+    //if console.title is not none
+
+    
      
-    return Console.title.toLowerCase().includes(searchTerm.toLowerCase());
+    if (Console.title!==null){
+
+        return Console.title.toLowerCase().includes(searchTerm.toLowerCase());}
+  
   });
   
   
@@ -145,7 +153,7 @@ const App=()=> {
 
     <>
      <InputWithLabel id="search"  onInputChange={handleSearch} value={searchTerm} type="text" isFocused>
-         My Video Game store
+         Hackernews 
       </InputWithLabel>
 
       {Consoles.isError && <p>Something went wrong...</p>}

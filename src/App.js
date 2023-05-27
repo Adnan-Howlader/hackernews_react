@@ -30,12 +30,19 @@ let items = [
 
 //reducer function
 const consoleReducer=(state,action)=>{
-  if(action.type==='SET_CONSOLE'){
-    return action.payload;// return the new state
+  if(action.type==='SET_LOADING'){
+    return {...state,isLoading:true,isError:false};
+  }
+  else if(action.type==='SET_CONSOLE'){
+    return {data:action.payload,isError:false,isLoading:false};
   }
 
   else if(action.type==='REMOVE_CONSOLE'){
-    return state.filter((Console)=>Console.id!==action.payload.id);
+    const new_consoles=state.data.filter((Console)=>Console.id!==action.payload.id);
+    return {data:new_consoles,isError:false,isLoading:false};
+  }
+  else if(action.type==='SET_ERROR'){
+    return {...state,isError:true,isLoading:false}
   }
   else{
     throw new Error();
@@ -48,8 +55,8 @@ const consoleReducer=(state,action)=>{
 const getAsyncStories=(resolve,reject)=>{
   return new Promise((resolve,reject)=>{
     setTimeout(()=>{
-     // resolve({data:{consoles:items}});//it sends resolved promise
-       reject(new Error('Error occured'));//it sends rejected promise
+      //resolve({consoles:items});//it sends resolved promise
+      reject(new Error('Error occured'));//it sends rejected promise
 
     },3000);//0 seconds delay and then resolve the promise
   });
@@ -69,6 +76,8 @@ const useSemiPersistentState=(key,initialState)=>{
 
 };
 
+const API_ENDPOINT='https://hn.algolia.com/api/v1/search?query='
+
 
 
 
@@ -81,9 +90,8 @@ const App=()=> {
   
   const [searchTerm,setSearchTerm]=useSemiPersistentState('search','switch'); //array destructuring
   // const [Consoles,setConsoles]=React.useState([]);//array destructuring
-  const [Consoles,dispatchConsoles]=React.useReducer(consoleReducer,[]);//array destructuring
-  const [isError,setIsError]=React.useState(false);//array destructuring
-  const [isLoading,setIsLoading]=React.useState(false);//array destructuring
+  const [Consoles,dispatchConsoles]=React.useReducer(consoleReducer,{data:[],isError:false,isLoading:true});//array destructuring
+
 
 
   const handleSearch=(event)=>{
@@ -94,12 +102,17 @@ const App=()=> {
   
 
   React.useEffect(()=>{
-    setIsLoading(true);
+
+    //loading
+    dispatchConsoles({type:'SET_LOADING'});
+
     getAsyncStories().then((result)=>
-    dispatchConsoles({type:'SET_CONSOLE',payload:result.data.consoles}))
-    .catch(()=>setIsError(true));
+    dispatchConsoles({type:'SET_CONSOLE',payload:result.consoles})).catch(error=>dispatchConsoles({type:'SET_ERROR'}));
   
-  },[]);//empty array means it runs only once on first render
+  }  ,[]);//empty array means it runs only once on first render
+    
+  
+//empty array means it runs only once on first render
 
   //create a list of objects that store id and name of nintendo console
 
@@ -112,7 +125,7 @@ const App=()=> {
  
 
 
-  const filteredItem=Consoles.filter((Console)=>{
+  const filteredItem=Consoles.data.filter((Console)=>{
     return Console.name.toLowerCase().includes(searchTerm.toLowerCase());
   });
   
@@ -125,9 +138,9 @@ const App=()=> {
          My Video Game store
       </InputWithLabel>
 
-      {isError && <p>Something went wrong...</p>}
+      {Consoles.isError && <p>Something went wrong...</p>}
 
-      {isLoading?<p>Loading...</p>:<List list={filteredItem} onRemoveItem={handleRemoveItem}  />}
+      {Consoles.isLoading?<p>Loading...</p>:<List list={filteredItem} onRemoveItem={handleRemoveItem}  />}
      
      
      
